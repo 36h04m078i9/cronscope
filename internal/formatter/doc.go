@@ -1,10 +1,10 @@
-// Package formatter provides output formatters for cronscope.
+// Package formatter provides output renderers for cron execution schedules.
 //
-// It supports multiple output formats for rendering cron schedule results:
+// Supported formats:
+//   - TableFormatter: renders results as an ASCII table
+//   - JSONFormatter:  renders results as a JSON document
+//   - PlainFormatter: renders results as human-readable plain text
 //
-//   - TableFormatter: renders results as a human-readable terminal table
-//   - JSONFormatter: renders results as structured JSON for scripting or piping
-//
-// All formatters accept a cron expression string and a slice of time.Time values
-// representing upcoming execution times.
+// Each formatter accepts a cron expression string and a timezone name,
+// and exposes a Render([]time.Time) string method.
 package formatter
