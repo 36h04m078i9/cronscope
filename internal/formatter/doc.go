@@ -1,17 +1,27 @@
-// Package formatter provides multiple output formatters for rendering
-// cron expression schedules and their next execution times.
+// Package formatter provides multiple output renderers for cron schedule data.
+//
+// Each formatter implements the Formatter interface and accepts a cron
+// expression along with a slice of upcoming execution times, returning
+// a string representation suitable for a specific output format.
 //
 // Available formatters:
 //
-//   - TableFormatter  – ASCII table output (default)
-//   - PlainFormatter  – plain text, one time per line
-//   - JSONFormatter   – machine-readable JSON
-//   - ColorFormatter  – ANSI-colored terminal output
-//   - HumanizeFormatter – human-friendly relative durations
-//   - ICalFormatter   – iCalendar (.ics) format
-//   - CSVFormatter    – comma-separated values
+//   - Table    – aligned terminal table (via tabwriter)
+//   - Plain    – simple numbered list
+//   - JSON     – machine-readable JSON array
+//   - Color    – ANSI-colored terminal output
+//   - Humanize – human-friendly relative durations
+//   - ICal     – RFC 5545 iCalendar (.ics) format
+//   - CSV      – comma-separated values
+//   - Markdown – GitHub-flavoured Markdown table
 //
-// Each formatter implements a Render(expression string, times []time.Time) (string, error)
-// method and can be constructed with a timezone string. Passing an empty
-// timezone string defaults to UTC.
+// Usage:
+//
+//	f := formatter.NewMarkdownFormatter("America/Chicago")
+//	fmt.Println(f.Render("0 9 * * 1-5", times))
 package formatter
+
+// Formatter is the common interface implemented by all output renderers.
+type Formatter interface {
+	Render(expression string, times []time.Time) string
+}
