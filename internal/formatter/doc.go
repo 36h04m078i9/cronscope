@@ -1,10 +1,10 @@
-// Package formatter provides output rendering utilities for cronscope.
+// Package formatter provides output formatters for cronscope.
 //
-// It currently exposes TableFormatter, which prints upcoming cron execution
-// times in a human-readable table to any io.Writer (e.g. os.Stdout).
+// It supports multiple output formats for rendering cron schedule results:
 //
-// Example usage:
+//   - TableFormatter: renders results as a human-readable terminal table
+//   - JSONFormatter: renders results as structured JSON for scripting or piping
 //
-//	f := formatter.NewTableFormatter(os.Stdout)
-//	f.Render("0 * * * *", times)
+// All formatters accept a cron expression string and a slice of time.Time values
+// representing upcoming execution times.
 package formatter
