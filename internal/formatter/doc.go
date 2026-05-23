@@ -1,27 +1,35 @@
-// Package formatter provides multiple output renderers for cron schedule data.
+// Package formatter provides multiple output format renderers for cron schedule results.
 //
-// Each formatter implements the Formatter interface and accepts a cron
-// expression along with a slice of upcoming execution times, returning
-// a string representation suitable for a specific output format.
+// Each formatter implements the Formatter interface and accepts a cron expression
+// string and a slice of scheduled times, returning a formatted string representation.
 //
 // Available formatters:
 //
-//   - Table    – aligned terminal table (via tabwriter)
-//   - Plain    – simple numbered list
-//   - JSON     – machine-readable JSON array
-//   - Color    – ANSI-colored terminal output
-//   - Humanize – human-friendly relative durations
-//   - ICal     – RFC 5545 iCalendar (.ics) format
-//   - CSV      – comma-separated values
-//   - Markdown – GitHub-flavoured Markdown table
+//   - Table    — ASCII table output (default)
+//   - Plain    — Simple line-by-line text output
+//   - JSON     — Machine-readable JSON output
+//   - Color    — ANSI-colored terminal output
+//   - Humanize — Human-friendly relative time output
+//   - ICal     — iCalendar (.ics) format for calendar import
+//   - CSV      — Comma-separated values for spreadsheet use
+//   - Markdown — GitHub-flavored Markdown table
+//   - XML      — XML document output for interoperability
 //
 // Usage:
 //
-//	f := formatter.NewMarkdownFormatter("America/Chicago")
-//	fmt.Println(f.Render("0 9 * * 1-5", times))
+//	f := formatter.NewTableFormatter("UTC")
+//	output, err := f.Render("0 * * * *", times)
+//
+// The Formatter interface:
+//
+//	type Formatter interface {
+//		Render(expression string, times []time.Time) (string, error)
+//	}
 package formatter
 
-// Formatter is the common interface implemented by all output renderers.
+import "time"
+
+// Formatter is the common interface implemented by all output formatters.
 type Formatter interface {
-	Render(expression string, times []time.Time) string
+	Render(expression string, times []time.Time) (string, error)
 }

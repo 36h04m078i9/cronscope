@@ -1,3 +1,4 @@
+// Package cli provides the command-line interface for cronscope.
 package cli
 
 import (
@@ -10,87 +11,94 @@ import (
 	"github.com/user/cronscope/internal/parser"
 )
 
-// Run is the entry point for the CLI. It parses arguments and executes the command.
+const defaultN = 5
+
+// Run parses CLI arguments and executes the cronscope command.
 func Run(args []string, out io.Writer) error {
-	opts, err := parseArgs(args)
+	expression, opts, err := parseArgs(args)
 	if err != nil {
 		return err
 	}
-	return execute(opts, out)
+	return execute(expression, opts, out)
 }
 
 type options struct {
-	expression string
-	n          int
-	timezone   string
-	format     string
+	n        int
+	timezone string
+	format   string
 }
 
-func parseArgs(args []string) (*options, error) {
+func parseArgs(args []string) (string, options, error) {
 	fs := flag.NewFlagSet("cronscope", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-
-	n := fs.Int("n", 5, "number of next execution times to show")
-	tz := fs.String("tz", "UTC", "timezone (e.g. America/New_York)")
-	fmt := fs.String("format", "table", "output format: table, plain, json, color, humanize, ical")
+	n := fs.Int("n", defaultN, "number of next execution times to show")
+	tz := fs.String("tz", "UTC", "timezone for output (e.g. America/New_York)")
+	fmt := fs.String("format", "table", "output format: table, plain, json, color, humanize, ical, csv, markdown, xml")
 
 	if err := fs.Parse(args); err != nil {
-		return nil, fmt.Errorf("invalid arguments: %w", err)
+		return "", options{}, err
 	}
 
-	if fs.NArg() < 1 {
-		return nil, fmt.Errorf("usage: cronscope [flags] <cron expression>")
+	remaining := fs.Args()
+	if len(remaining) == 0 {
+		return "", options{}, fmt2.Errorf("missing cron expression")
 	}
 
-	expr := ""
-	for i, a := range fs.Args() {
-		if i > 0 {
-			expr += " "
-		}
-		expr += a
-	}
-
-	return &options{
-		expression: expr,
-		n:          *n,
-		timezone:   *tz,
-		format:     *fmt,
-	}, nil
+	return remaining[0], options{n: *n, timezone: *tz, format: *fmt}, nil
 }
 
-func execute(opts *options, out io.Writer) error {
+func execute(expression string, opts options, out io.Writer) error {
 	loc, err := parser.LoadTimezone(opts.timezone)
 	if err != nil {
 		return fmt.Errorf("invalid timezone %q: %w", opts.timezone, err)
 	}
 
-	schedule, err := parser.Parse(opts.expression)
+	sched, err := parser.Parse(expression)
 	if err != nil {
-		return fmt.Errorf("invalid cron expression %q: %w", opts.expression, err)
+		return fmt.Errorf("invalid cron expression %q: %w", expression, err)
 	}
 
-	times := parser.NextNInLocation(schedule, opts.n, loc)
+	times := parser.NextN(sched, opts.n, loc)
 
-	var f formatter.Formatter
-	switch opts.format {
-	case "plain":
-		f = formatter.NewPlainFormatter(opts.timezone)
-	case "json":
-		f = formatter.NewJSONFormatter(opts.timezone)
-	case "color":
-		f = formatter.NewColorFormatter(opts.timezone)
-	case "humanize":
-		f = formatter.NewHumanizeFormatter(opts.timezone)
-	case "ical":
-		f = formatter.NewICalFormatter(opts.timezone)
-	default:
-		f = formatter.NewTableFormatter(opts.timezone)
+	f, err := resolveFormatter(opts.format, opts.timezone)
+	if err != nil {
+		return err
 	}
 
-	_, err = fmt.Fprint(out, f.Render(opts.expression, times))
+	result, err := f.Render(expression, times)
+	if err != nil {
+		return fmt.Errorf("render error: %w", err)
+	}
+
+	_, err = fmt.Fprint(out, result)
 	return err
 }
 
+func resolveFormatter(format, timezone string) (formatter.Formatter, error) {
+	switch format {
+	case "table":
+		return formatter.NewTableFormatter(timezone), nil
+	case "plain":
+		return formatter.NewPlainFormatter(timezone), nil
+	case "json":
+		return formatter.NewJSONFormatter(timezone), nil
+	case "color":
+		return formatter.NewColorFormatter(timezone), nil
+	case "humanize":
+		return formatter.NewHumanizeFormatter(timezone), nil
+	case "ical":
+		return formatter.NewICalFormatter(timezone), nil
+	case "csv":
+		return formatter.NewCSVFormatter(timezone), nil
+	case "markdown":
+		return formatter.NewMarkdownFormatter(timezone), nil
+	case "xml":
+		return formatter.NewXMLFormatter(timezone), nil
+	default:
+		return nil, fmt.Errorf("unknown format %q", format)
+	}
+}
+
+// Main is the entry point called from cmd/cronscope/main.go.
 func Main() {
 	if err := Run(os.Args[1:], os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
