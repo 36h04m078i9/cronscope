@@ -1,21 +1,19 @@
-// Package formatter provides output renderers for cron execution schedules.
+// Package formatter provides multiple output formatters for cron schedule data.
 //
-// Supported formats:
-//   - TableFormatter: renders results as an ASCII table
-//   - JSONFormatter:  renders results as a JSON document
-//   - PlainFormatter: renders results as human-readable plain text
+// Available formatters:
 //
-// Each formatter accepts a cron expression string and a timezone name,
-// and exposes a Render([]time.Time) string method.
+//   - TableFormatter: renders results as an aligned ASCII table.
+//   - PlainFormatter: renders results as plain human-readable text.
+//   - JSONFormatter:  renders results as structured JSON output.
+//   - ColorFormatter: renders results with ANSI color highlighting for
+//     interactive terminal use.
 //
-// Usage example:
+// All formatters accept a cron expression string, a timezone string, and a
+// slice of time.Time values representing upcoming execution times. They each
+// expose a Render method that returns the formatted string.
 //
-//	f, err := formatter.New("table", "* * * * *", "UTC")
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	fmt.Println(f.Render(times))
+// Example usage:
 //
-// The format name passed to New is case-insensitive. Valid values are
-// "table", "json", and "plain".
+//	f := formatter.NewColorFormatter("0 9 * * 1-5", "America/Chicago")
+//	fmt.Print(f.Render(times))
 package formatter
