@@ -1,35 +1,24 @@
-// Package formatter provides multiple output format renderers for cron schedule results.
+// Package formatter provides multiple output renderers for cron execution schedules.
 //
-// Each formatter implements the Formatter interface and accepts a cron expression
-// string and a slice of scheduled times, returning a formatted string representation.
+// Each formatter implements a Render(expression string, times []time.Time) (string, error)
+// method and can be selected via the --format CLI flag.
 //
 // Available formatters:
 //
-//   - Table    — ASCII table output (default)
-//   - Plain    — Simple line-by-line text output
-//   - JSON     — Machine-readable JSON output
-//   - Color    — ANSI-colored terminal output
-//   - Humanize — Human-friendly relative time output
-//   - ICal     — iCalendar (.ics) format for calendar import
-//   - CSV      — Comma-separated values for spreadsheet use
-//   - Markdown — GitHub-flavored Markdown table
-//   - XML      — XML document output for interoperability
+//   - table        : compact tabwriter-aligned table
+//   - pretty-table : bordered ASCII table with summary footer
+//   - plain        : simple numbered list
+//   - text         : plain text with labels
+//   - color        : ANSI color-highlighted output
+//   - json         : JSON object with expression, timezone, and times array
+//   - yaml         : YAML document
+//   - toml         : TOML document
+//   - csv          : comma-separated values with header row
+//   - markdown     : GitHub-flavored Markdown table
+//   - xml          : XML document with schedule entries
+//   - ical         : iCalendar (RFC 5545) VCALENDAR with VEVENT entries
+//   - humanize     : human-readable relative durations (e.g. "in 3 hours")
+//   - template     : user-supplied Go text/template string
 //
-// Usage:
-//
-//	f := formatter.NewTableFormatter("UTC")
-//	output, err := f.Render("0 * * * *", times)
-//
-// The Formatter interface:
-//
-//	type Formatter interface {
-//		Render(expression string, times []time.Time) (string, error)
-//	}
+// All formatters default to UTC when no timezone is provided.
 package formatter
-
-import "time"
-
-// Formatter is the common interface implemented by all output formatters.
-type Formatter interface {
-	Render(expression string, times []time.Time) (string, error)
-}
